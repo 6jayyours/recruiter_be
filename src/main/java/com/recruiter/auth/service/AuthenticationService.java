@@ -10,6 +10,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,17 +49,22 @@ public class AuthenticationService {
         user.setRole("USER");
         user = userRepository.save(user);
         sendOTPEmail(user.getEmail(), otp);
-        String jwtToken = jwtService.generateToken( user);
-        return jwtToken;
+//        String jwtToken = jwtService.generateToken( user);
+        return new String("User registered successfully");
     }
 
     public String authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+        } catch (AuthenticationException e) {
+            // Authentication failed, return an error response or throw an exception
+            return new String("Invalid username or password");
+        }
 
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
 
@@ -66,11 +72,10 @@ public class AuthenticationService {
             // User is blocked or inactive, return an error response or throw an exception
             return new String("User is blocked or inactive");
         }
-        String jwtToken = jwtService.generateToken(user);
 
-
-        return jwtToken;
+        return jwtService.generateToken(user); // Generate token only upon successful authentication
     }
+
 
 
 
@@ -93,8 +98,8 @@ public class AuthenticationService {
         javaMailSender.send(message);
     }
 
-    public boolean verifyOTP(String email, String otp) {
-        User user = userRepository.findByEmail(email);
+    public boolean verifyOTP(String name, String otp) {
+        User user = userRepository.findByEmail(name);
 
         if (user != null) {
             String storedOtp = user.getOtp();
