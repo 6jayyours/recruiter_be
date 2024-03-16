@@ -3,6 +3,7 @@ package com.recruiter.auth.service;
 
 
 import com.recruiter.auth.model.AuthenticationRequest;
+import com.recruiter.auth.model.AuthenticationResponse;
 import com.recruiter.auth.model.RegisterRequest;
 import com.recruiter.auth.model.User;
 import com.recruiter.auth.repository.UserRepository;
@@ -35,9 +36,9 @@ public class AuthenticationService {
         this.jwtService = jwtService;
     }
 
-    public String register(RegisterRequest request) {
+    public AuthenticationResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            return new String("Username is already taken");
+            return new AuthenticationResponse(null,"Username already exists",null);
         }
         String otp = generateOTP();
         User user = new User();
@@ -46,14 +47,14 @@ public class AuthenticationService {
         user.setEmail(request.getEmail());
         user.setStatus(false);
         user.setOtp(otp);
-        user.setRole("USER");
+        user.setRole(request.getRole());
         user = userRepository.save(user);
         sendOTPEmail(user.getEmail(), otp);
 //        String jwtToken = jwtService.generateToken( user);
-        return new String("User registered successfully");
+        return new AuthenticationResponse(null,"User registered successfully",null);
     }
 
-    public String authenticate(AuthenticationRequest request) {
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -63,17 +64,18 @@ public class AuthenticationService {
             );
         } catch (AuthenticationException e) {
             // Authentication failed, return an error response or throw an exception
-            return new String("Invalid username or password");
+            return new AuthenticationResponse(null,"Invalid username or password",null);
         }
 
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
 
         if (!user.isStatus()) {
             // User is blocked or inactive, return an error response or throw an exception
-            return new String("User is blocked or inactive");
+            return new AuthenticationResponse(null,"User is blocked",null);
         }
 
-        return jwtService.generateToken(user); // Generate token only upon successful authentication
+        String jwtToken = jwtService.generateToken(user);
+        return new AuthenticationResponse(jwtToken,"User Registered Successfully",user.getRole());
     }
 
 

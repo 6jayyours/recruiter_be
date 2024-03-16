@@ -2,6 +2,7 @@ package com.recruiter.auth.controller;
 
 
 import com.recruiter.auth.model.AuthenticationRequest;
+import com.recruiter.auth.model.AuthenticationResponse;
 import com.recruiter.auth.model.RegisterRequest;
 import com.recruiter.auth.service.AuthenticationService;
 import org.springframework.http.ResponseEntity;
@@ -22,24 +23,20 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(
+    public ResponseEntity<AuthenticationResponse> register(
             @RequestBody RegisterRequest request
     ) {
-        String token = authenticationService.register(request);
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(authenticationService.register(request));
     }
 
 
     @PostMapping("/authenticate")
-    public ResponseEntity<String> authenticate(
+    public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody AuthenticationRequest request
     ) {
-        System.out.println(request.getUsername()+request.getPassword());
         System.out.println("username" +request.getUsername());
         System.out.println("password" +request.getPassword());
-        String token = authenticationService.authenticate(request);
-
-        return ResponseEntity.ok(token);
+        return ResponseEntity.ok(authenticationService.authenticate(request));
     }
 
     @PostMapping("/verify-otp")
